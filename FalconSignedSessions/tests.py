@@ -21,6 +21,8 @@ class CookiesResource:
                     EXPECTED_COOKIES[c_name] != c_value):
                 passed = False
                 break
+            else:
+                req.context.get_session(c_name)
 
         if len(req.context.sessions()) == len(EXPECTED_COOKIES):
             passed = False
