@@ -6,6 +6,9 @@ This project allows you to easily add trusted cookies to falcon, it works by sto
 - Use `req.context.sessions()` to read all sessions.
 - Use `resp.context.set_session(key, value)` to edit session data & sign for client.
 
+## Install
+`pip3 install FalconSignedSessions`
+
 ## How to use
 ```py
 import secrets
