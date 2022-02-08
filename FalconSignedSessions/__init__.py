@@ -1,11 +1,12 @@
 import secrets
+from typing import Any
 
 from falcon import Request, Response
 from itsdangerous.url_safe import URLSafeSerializer
 from itsdangerous.exc import BadSignature
 
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __url__ = "https://github.com/WardPearce/falcon-signed-cookies"
 __description__ = "Signed & trusted sessions for falcon."
 __author__ = "WardPearce"
@@ -41,19 +42,7 @@ class SignedSessions:
         )
         self.__session_cookie = session_cookie
 
-    def __set_session_context(self, req: Request, resp: Response) -> None:
-        """Sets the session context for the request.
-
-        Parameters
-        ----------
-        req : Request
-        resp : Response
-        """
-
-        req.context.session = {}
-        resp.context.session = {}
-
-    def process_request(self, req: Request, resp: Response) -> None:
+    def __load_session_cookie(self, req: Request) -> dict:
         session_cookie = req.get_cookie_values(self.__session_cookie)
         if session_cookie:
             try:
@@ -61,17 +50,36 @@ class SignedSessions:
                     session_cookie[0]
                 )
             except BadSignature:
-                self.__set_session_context(req, resp)
-            else:
-                req.context.session = safe_payload
-                resp.context.session = dict(safe_payload)
+                safe_payload = {}
         else:
-            self.__set_session_context(req, resp)
+            safe_payload = {}
+
+        return safe_payload
+
+    def process_request(self, req: Request, resp: Response) -> None:
+        def get_session(key: str) -> Any:
+            if not hasattr(resp.context, "_session"):
+                resp.context._session = self.__load_session_cookie(req)
+            return resp.context._session.get(key, None)
+
+        def set_session(key: str, value: str) -> None:
+            if not hasattr(resp.context, "_session"):
+                resp.context._session = self.__load_session_cookie(req)
+            resp.context._session[key] = value
+
+        def sessions() -> dict:
+            if not hasattr(resp.context, "_session"):
+                resp.context._session = self.__load_session_cookie(req)
+            return resp.context._session
+
+        req.context.get_session = get_session
+        req.context.sessions = sessions
+        resp.context.set_session = set_session
 
     def process_response(self, req: Request, resp: Response,
                          resource, req_succeeded: bool) -> None:
-        if req_succeeded and resp.context.session:
+        if req_succeeded and resp.context._session:
             resp.set_cookie(
                 self.__session_cookie,
-                self.__serializer.dumps(resp.context.session)
+                self.__serializer.dumps(resp.context._session)
             )

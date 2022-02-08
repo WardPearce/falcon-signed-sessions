@@ -16,13 +16,17 @@ class CookiesResource:
         """
 
         passed = True
-        for c_name, c_value in req.context.session.items():
+        for c_name, c_value in (req.context.sessions()).items():
             if (c_name not in EXPECTED_COOKIES or
                     EXPECTED_COOKIES[c_name] != c_value):
                 passed = False
                 break
+            else:
+                if not req.context.get_session(c_name):
+                    passed = False
+                    break
 
-        if len(req.context.session) == len(EXPECTED_COOKIES):
+        if len(req.context.sessions()) == len(EXPECTED_COOKIES):
             passed = False
 
         resp.media = {
@@ -34,11 +38,11 @@ class CookiesResource:
         """
 
         for c_name, c_value in EXPECTED_COOKIES.items():
-            resp.context.session[c_name] = c_value
+            resp.context.set_session(c_name, c_value)
 
     def on_put(self, req: Request, resp: Response) -> None:
         resp.media = {
-            "passed": not req.context.session
+            "passed": not req.context.sessions()
         }
 
 
