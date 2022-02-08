@@ -62,7 +62,7 @@ class SignedSessions:
                 resp.context._session = self.__load_session_cookie(req)
             return resp.context._session.get(key, None)
 
-        def set_session(key: str, value: str) -> None:
+        def set_session(key: str, value: Any) -> None:
             if not hasattr(resp.context, "_session"):
                 resp.context._session = self.__load_session_cookie(req)
             resp.context._session[key] = value
