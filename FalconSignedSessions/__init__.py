@@ -6,7 +6,7 @@ from itsdangerous.url_safe import URLSafeSerializer
 from itsdangerous.exc import BadSignature
 
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 __url__ = "https://github.com/WardPearce/falcon-signed-cookies"
 __description__ = "Signed & trusted sessions for falcon."
 __author__ = "WardPearce"
@@ -62,7 +62,7 @@ class SignedSessions:
                 resp.context._session = self.__load_session_cookie(req)
             return resp.context._session.get(key, None)
 
-        def set_session(key: str, value: str) -> None:
+        def set_session(key: str, value: Any) -> None:
             if not hasattr(resp.context, "_session"):
                 resp.context._session = self.__load_session_cookie(req)
             resp.context._session[key] = value
@@ -78,7 +78,8 @@ class SignedSessions:
 
     def process_response(self, req: Request, resp: Response,
                          resource, req_succeeded: bool) -> None:
-        if req_succeeded and resp.context._session:
+        if (req_succeeded and hasattr(resp.context, "_session")
+                and resp.context._session):
             resp.set_cookie(
                 self.__session_cookie,
                 self.__serializer.dumps(resp.context._session)
